@@ -29,3 +29,10 @@ function multiply(a: number, b: number, c?: number): number {
 function printMessage(message: string): void {
     console.log(message);
 }
+
+
+
+//泛型函数（类比C++模板）
+function identity<T>(value: T): T {
+    return value;
+}
