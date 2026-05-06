@@ -22,3 +22,20 @@ npm install
 npm run dev
 ```
 
+## .vue文件的格式
+```html
+<template>
+  <div>
+    <h1>Html Content</h1>
+  </div>
+</template>
+
+<script setup lang="ts">
+    typecript code here
+</script>
+
+<style scoped>
+    css code here
+</style>
+```
+
