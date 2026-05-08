@@ -60,6 +60,7 @@ app.use(router);
 ```
 
   这个router来自ts脚本`./router/index.ts`中定义的`router`类。
+  这个`use`方法其实就把router类挂载到了app实例上。
 
 2. router类中其实就定义了URL到页面的映射。
   每个页面需要两个必须的：
@@ -70,4 +71,6 @@ app.use(router);
 
   默认的两个组件页定义的不一样，一个是立刻加载（在上面import），一个是懒惰加载（在运行中import）。
 
-3. 
+3. `App.vue`中，容易看到导入了`RouterView`,`RouterLink`组件。
+  - `RouterView`组件表示当前页面是哪个URL。
+  - `RouterLink`组件用于定义跳转按钮。
