@@ -39,7 +39,7 @@ npm run dev
 </style>
 ```
 
-## vue项目是如何启动的
+## Vue项目是如何启动的
 
 1. 用户访问web url时，服务端返回`index.html`文件。
 2. 浏览器解析`index.html`文件
@@ -51,3 +51,23 @@ npm run dev
     1. 文件`App.vue`直接被解析为一个类，在`main.ts`中被导入。
     2. 用`App`创建一个`app`实例，并挂载到`index.html`的`app`元素上。
 4. `App.vue`上，容易看到上面表述的.vue文件三层样式。
+
+## Vue项目是如何路由的
+
+1. 在app实例打到`index.html`的`app`元素之前，其实已经执行了
+```typescript
+app.use(router);
+```
+
+  这个router来自ts脚本`./router/index.ts`中定义的`router`类。
+
+2. router类中其实就定义了URL到页面的映射。
+  每个页面需要两个必须的：
+    - path: 网页上的URL。`/`表示index页面
+    - component: URL对应的组件页
+
+  此处的router定义了2个URL到页面的映射。
+
+  默认的两个组件页定义的不一样，一个是立刻加载（在上面import），一个是懒惰加载（在运行中import）。
+
+3. 
