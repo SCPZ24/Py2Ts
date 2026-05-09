@@ -17,6 +17,7 @@
   "dependencies": {
     "@types/three": "^0.184.1",
     "gsap": "^3.15.0",
+    "liquid-glass-vue": "^0.0.1",
     "pinia": "^3.0.4",
     "three": "^0.184.0",
     "vue": "^3.5.32",

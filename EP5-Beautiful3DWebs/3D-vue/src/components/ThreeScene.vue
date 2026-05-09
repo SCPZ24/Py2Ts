@@ -12,8 +12,8 @@
  *
  * 注意：
  * - canvas 是 position: fixed 全屏铺底
- * - 渲染循环里，scroll 控制 camera.position，
- *   鼠标视差在 scroll 基础上微调 camera.rotation
+ * - 渲染循环里，每帧先把 scrollBase（仅滚动）同步到 camera，再叠鼠标视差，
+ *   避免把视差重复累进 camera.rotation
  */
 
 import { ref, onMounted, onUnmounted } from 'vue'
@@ -54,19 +54,22 @@ onMounted(() => {
   // ── 渲染循环 ────────────────────────────────────────────
   function animate() {
     rafId = requestAnimationFrame(animate)
+    const deltaSec = threeCtx.clock.getDelta()
     const elapsed = threeCtx.clock.getElapsedTime()
 
-    // 1. 更新场景（呼吸灯 + 圆环自转）
-    updateScene(threeCtx, elapsed)
+    // 1. 用仅由 scroll 驱动的基准复位相机，再叠视差（防止视差每帧累加）
+    threeCtx.camera.position.copy(scrollAnim.scrollBase.position)
+    baseRotation.copy(scrollAnim.scrollBase.rotation)
+    threeCtx.camera.rotation.copy(baseRotation)
 
-    // 2. 记录 scroll 动画设定的旋转值（在 ScrollTrigger 的 onUpdate 里已更新）
-    baseRotation.copy(threeCtx.camera.rotation)
-
-    // 3. 鼠标视差叠加到相机旋转
+    // 2. 鼠标视差叠加到相机旋转
     mouseInter.update(threeCtx.camera, baseRotation)
 
+    // 3. 更新场景（呼吸灯 + 圆环自转；K billboard 需在此之后以使用最终相机朝向）
+    updateScene(threeCtx, elapsed)
+
     // 4. 更新粒子（传入鼠标 3D 位置 + scroll 进度）
-    particles.update(mouseInter.mousePos3D, scrollAnim.progress.value)
+    particles.update(mouseInter.mousePos3D, scrollAnim.progress.value, deltaSec, elapsed)
 
     // 5. 渲染（通过 EffectComposer 以支持 Bloom 后处理）
     threeCtx.composer.render()
@@ -108,6 +111,8 @@ onMounted(() => {
   height: 100%;
   z-index: 0;
   display: block;
+  /* 试卷色由 WebGL 内 backdrop 平面提供，避免 canvas 底色叠在 GL 之上造成“整张贴纸”观感 */
+  background: transparent;
 }
 
 /* ── SCROLL DOWN 提示 ── */
