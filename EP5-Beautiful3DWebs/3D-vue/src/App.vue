@@ -1,85 +1,40 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+/**
+ * App.vue — 根组件
+ *
+ * 层级结构（从底到顶）：
+ *   ThreeScene    — position: fixed，全屏 WebGL canvas（z-index: 0）
+ *   ThreeScene 内的 ScrollHint — position: fixed（z-index: 10）
+ *   NavigationBar — position: fixed，右上角（z-index: 100）
+ *   LoadingOverlay — position: fixed，最顶层（z-index: 1000）
+ *
+ * 流程：
+ *   1. 显示 LoadingOverlay（加载动画）
+ *   2. 加载完成后 LoadingOverlay 淡出，emit 'done'
+ *   3. App.vue 收到 'done'：标记 loaded=true
+ *      → ThreeScene 开始渲染（v-if="loaded" 避免 canvas 在加载前初始化）
+ *      → NavigationBar 淡入
+ */
+
+import { ref } from 'vue'
+import LoadingOverlay from '@/components/LoadingOverlay.vue'
+import NavigationBar from '@/components/NavigationBar.vue'
+import ThreeScene from '@/components/ThreeScene.vue'
+
+const loaded = ref(false)
+
+function onLoadingDone() {
+  loaded.value = true
+}
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <!-- 加载遮罩（z-index 最高，加载完后自动淡出消失） -->
+  <LoadingOverlay @done="onLoadingDone" />
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+  <!-- Three.js 主场景（加载完成后才挂载，避免资源浪费） -->
+  <ThreeScene v-if="loaded" />
 
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+  <!-- 导航栏（加载完成后淡入） -->
+  <NavigationBar :visible="loaded" />
 </template>
-
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
-</style>
