@@ -74,3 +74,33 @@ app.use(router);
 3. `App.vue`中，容易看到导入了`RouterView`,`RouterLink`组件。
   - `RouterView`组件表示当前页面是哪个URL。
   - `RouterLink`组件用于定义跳转按钮。
+
+
+## 一个Vue网页还需要什么
+
+### API调用
+我们经常用Axios来调后端API。
+
+我们可以设置调用拦截器，在调用API之前，进行一些处理。
+
+```typescript
+axios.interceptors.request.use(config => {
+  return config;
+});
+```
+调用API之后也可以进行一些处理。
+```typescript
+axios.interceptors.response.use(response => {
+  return response;
+}, error => {
+    return Promise.reject(error);
+});
+```
+
+### 全局变量
+我们用pinia来管理全局变量。
+```typescript
+import { createPinia } from 'pinia';
+const pinia = createPinia();
+app.use(pinia);
+```
