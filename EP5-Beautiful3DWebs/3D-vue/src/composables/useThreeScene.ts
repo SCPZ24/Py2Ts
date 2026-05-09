@@ -20,9 +20,6 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
 
-/** 护眼试卷纸暖色底 — 与 `main.css` 中 html/body 背景一致 */
-const PAPER_BACKGROUND = 0xfaf6ed
-
 export interface ThreeContext {
   renderer: THREE.WebGLRenderer
   scene: THREE.Scene
@@ -30,8 +27,6 @@ export interface ThreeContext {
   composer: EffectComposer
   torusGroup: THREE.Group
   letterK: THREE.Mesh
-  /** 远距试卷纸平面，随相机距离在 `updateScene` / resize 中更新 scale */
-  backdropMesh: THREE.Mesh
   clock: THREE.Clock
   dispose: () => void
 }
@@ -131,24 +126,9 @@ function createTorus(): {
   return { group, letterK, disposeLetterK }
 }
 
-/** 试卷纸平面放在世界 -Z 侧（相机在 +Z 朝原点看时，平面在主角“背后”） */
-const BACKDROP_Z = -22
-const _backdropCenter = new THREE.Vector3(0, 0, BACKDROP_Z)
-
-function updateBackdropScale(
-  camera: THREE.PerspectiveCamera,
-  backdrop: THREE.Mesh,
-) {
-  const dist = camera.position.distanceTo(_backdropCenter)
-  const vFovRad = THREE.MathUtils.degToRad(camera.fov)
-  const halfH = Math.tan(vFovRad / 2) * dist
-  const halfW = halfH * camera.aspect
-  const margin = 1.4
-  backdrop.scale.set(2 * halfW * margin, 2 * halfH * margin, 1)
-}
-
 export function useThreeScene(canvas: HTMLCanvasElement): ThreeContext {
   // ── 渲染器 ──────────────────────────────────────────────
+  // 透明 WebGL：清屏 alpha=0；页面底色由 main.css 的 html/body 提供（深色，不抢透明主体）
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -156,7 +136,6 @@ export function useThreeScene(canvas: HTMLCanvasElement): ThreeContext {
   })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.setSize(window.innerWidth, window.innerHeight)
-  // 透明清屏：试卷底色由场景内 backdrop 平面提供，避免与 scene.background 叠成“整张贴纸”挡在深度前
   renderer.setClearColor(0x000000, 0)
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.2
@@ -164,7 +143,6 @@ export function useThreeScene(canvas: HTMLCanvasElement): ThreeContext {
   // ── 场景 ────────────────────────────────────────────────
   const scene = new THREE.Scene()
   scene.background = null
-  scene.fog = new THREE.FogExp2(PAPER_BACKGROUND, 0.15)
 
   // ── 环境贴图（让 MeshPhysicalMaterial 反射正常工作） ────
   const pmremGenerator = new THREE.PMREMGenerator(renderer)
@@ -184,7 +162,7 @@ export function useThreeScene(canvas: HTMLCanvasElement): ThreeContext {
   camera.position.set(0, 0.2, 3.5)
 
   // ── 灯光 ────────────────────────────────────────────────
-  const ambientLight = new THREE.AmbientLight(0xfff5ea, 0.26)
+  const ambientLight = new THREE.AmbientLight(0xf2f4f8, 0.22)
   scene.add(ambientLight)
 
   // 主光自下方抬起（负 Y），配合略低的环境光避免玻璃过曝
@@ -200,20 +178,6 @@ export function useThreeScene(canvas: HTMLCanvasElement): ThreeContext {
   rimLow.position.set(-1.2, -0.7, -0.6)
   scene.add(rimLow)
 
-  // ── 远距试卷纸平面（世界空间背景，先于透明物体绘制） ───────
-  const backdropGeo = new THREE.PlaneGeometry(1, 1)
-  const backdropMat = new THREE.MeshBasicMaterial({
-    color: PAPER_BACKGROUND,
-    side: THREE.DoubleSide,
-    depthWrite: true,
-    depthTest: true,
-  })
-  const backdropMesh = new THREE.Mesh(backdropGeo, backdropMat)
-  backdropMesh.position.set(0, 0, BACKDROP_Z)
-  backdropMesh.renderOrder = -1000
-  scene.add(backdropMesh)
-  updateBackdropScale(camera, backdropMesh)
-
   // ── 主角几何体 ──────────────────────────────────────────
   const { group: torusGroup, letterK, disposeLetterK } = createTorus()
   torusGroup.position.set(0, 0, 0)
@@ -226,9 +190,9 @@ export function useThreeScene(canvas: HTMLCanvasElement): ThreeContext {
 
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.8,   // strength
-    0.5,   // radius
-    0.7,   // threshold
+    0.38,  // strength
+    0.42,  // radius
+    0.92,  // threshold — 主要让高亮（字 K、粒子等）起辉光
   )
   composer.addPass(bloomPass)
   composer.addPass(new OutputPass())
@@ -242,16 +206,12 @@ export function useThreeScene(canvas: HTMLCanvasElement): ThreeContext {
     camera.updateProjectionMatrix()
     renderer.setSize(window.innerWidth, window.innerHeight)
     composer.setSize(window.innerWidth, window.innerHeight)
-    updateBackdropScale(camera, backdropMesh)
   }
   window.addEventListener('resize', onResize)
 
   // ── 清理函数 ────────────────────────────────────────────
   function dispose() {
     window.removeEventListener('resize', onResize)
-    scene.remove(backdropMesh)
-    backdropGeo.dispose()
-    backdropMat.dispose()
     scene.remove(letterK)
     disposeLetterK()
     renderer.dispose()
@@ -266,7 +226,6 @@ export function useThreeScene(canvas: HTMLCanvasElement): ThreeContext {
     composer,
     torusGroup,
     letterK,
-    backdropMesh,
     clock,
     dispose,
   }
@@ -280,9 +239,7 @@ export function updateScene(
   ctx: ThreeContext,
   elapsedTime: number,
 ) {
-  const { scene, camera, torusGroup, letterK, backdropMesh } = ctx
-
-  updateBackdropScale(camera, backdropMesh)
+  const { scene, camera, torusGroup, letterK } = ctx
 
   // 圆环缓慢自转
   torusGroup.rotation.y += 0.003

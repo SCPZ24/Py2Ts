@@ -7,8 +7,9 @@
 html, body {
   width: 100%;
   height: 100%;
-  background: #faf6ed;
-  color: #2a2520;
+  /* 深色底：透明 WebGL 透过之处不再铺米白试卷色，避免喧宾夺主 */
+  background: #020408;
+  color: #c8c4bc;
   font-family: 'Courier New', 'Courier', monospace;
   overflow-x: hidden;
 }
@@ -24,6 +25,6 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  /* 由 html/body 提供页边/漏光时的暖色；避免与全屏 canvas 重复铺色 */
+  /* 由 html/body 提供页边；canvas 透明处露出同一深色 */
   background: transparent;
 }

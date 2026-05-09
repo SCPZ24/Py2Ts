@@ -1,7 +1,7 @@
 /**
  * useParticleSystem
  * 负责创建和管理粒子云：
- *   - 球形分布的 8000 个粒子
+ *   - 球形分布的粒子（数量适中，避免压过主角）
  *   - 圆形 sprite（canvas 径向渐变贴图）+ AdditiveBlending 叠光
  *   - 顶点色：由初始球坐标（方位角 + 极角）映射的彩虹 HSL
  *   - 每帧更新：粒子受鼠标排斥力 + 速度阻尼 + 回弹到初始位置
@@ -11,7 +11,7 @@
 
 import * as THREE from 'three'
 
-const PARTICLE_COUNT = 8000
+const PARTICLE_COUNT = 3500
 const REPULSION_RADIUS = 0.8  // 鼠标排斥球半径（Three.js 世界单位）
 const REPULSION_STRENGTH = 0.008
 const DAMPING = 0.92           // 速度阻尼（< 1 让粒子弹回）

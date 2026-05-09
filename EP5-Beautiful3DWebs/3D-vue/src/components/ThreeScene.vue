@@ -111,7 +111,7 @@ onMounted(() => {
   height: 100%;
   z-index: 0;
   display: block;
-  /* 试卷色由 WebGL 内 backdrop 平面提供，避免 canvas 底色叠在 GL 之上造成“整张贴纸”观感 */
+  /* 透明：露出 html/body 深色底，不叠第二重底色 */
   background: transparent;
 }
 
